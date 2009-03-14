@@ -1,4 +1,4 @@
-COMPILE = avr-gcc -Wall -W -Os -I. -mmcu=atmega8515
+COMPILE = avr-gcc -Wall -Werror -W -Os -I. -mmcu=atmega8515
 OBJECTS = main.o
 
 # symbolic targets:

@@ -76,6 +76,7 @@ PD5 - temporary LED0
 #define WR_n		D, 6
 #define RESET_n		D, 4
 #define LED0		D, 5
+#define CLKOUT		B, 0
 
 #define ADDR_PORT	PORTA
 #define ADDR_DDR	DDRA
@@ -96,7 +97,7 @@ PD5 - temporary LED0
 #define _input(port, b)		bit_get(PIN ## port, b)
 
 #define output(signal, v)	_output(signal, v)
-#define ddr(signal, v)		_ddr(signal, v)
+#define ddr(signal, v)		_ddr(signal, v)		/* v==1 -> output */
 #define input(signal)		_input(signal)
 
 #define pullup(signal)		do { _ddr(signal, 0); _output(signal, 1); } while (0)
@@ -104,10 +105,18 @@ PD5 - temporary LED0
 
 /******************************************************************************/
 
+static void clockgen_init(void)
+{
+	/* set Timer0 to generate a 7MHz clock output on OC0 */
+	TCCR0 = _BV(WGM01) | _BV(COM00) | _BV(CS00);
+	OCR0 = 0;
+	ddr(CLKOUT, 1);
+}
+
+/******************************************************************************/
+
 int main(void)
 {
-	int k;
-
 	DDRA = 0;
 	DDRB = 0;
 	DDRC = 0;
@@ -129,9 +138,11 @@ int main(void)
 	_delay_ms(100);
 
 	uart_init();
-	printf_P(PSTR("\n\nHC2006 (C) 2006-2009 by Vampire-\n\n"));
+	printf_P(PSTR("\n\nHC2006 (C) 2006-2009 by Vampire-\n"
+		__DATE__ " " __TIME__ "\n\n"));
 
 	output(LED0, 1);
+	clockgen_init();
 
 	printf_P(PSTR("booted\n"));
 	while (1) {
@@ -144,6 +155,8 @@ int main(void)
 		default:
 			break;
 		}
+		
+		output(LED0, !input(LED0));
 	}
 	
 	return 0;
