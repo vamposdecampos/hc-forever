@@ -95,7 +95,9 @@ unsigned int calcrc(unsigned char *ptr, int count)
 	}
 	return (crc);
 }
-const char startupString[] = "press key 'd' to download,press other key to execute the application\n\r\0";
+const char startupString[] = "\r\n"
+	"HC2k bootloader " __DATE__ " " __TIME__ "\r\n"
+	"press 'd' to download, other key to run.\r\n\0";
 
 int main(void)
 {
