@@ -104,10 +104,10 @@ uint16_t calcrc(unsigned char *ptr, int count)
 
 const char startupString[] = "\r\n"
 	"HC2k bootloader " __DATE__ " " __TIME__ "\r\n"
-	"press 'd' to download, 'r' to run.\r\n";
+	"[D]ownload or [R]un.\r\n";
 
-const char runString[] = "\r\n"
-	"Running target.\r\n";
+const char runString[] = "\r\nRun.\r\n";
+const char cancelStr[] = {XMODEM_CAN, XMODEM_CAN, XMODEM_CAN, XMODEM_CAN, XMODEM_CAN, 0};
 
 int main(void)
 {
@@ -120,6 +120,7 @@ int main(void)
 	uint16_t crc;
 
 	initIo(BAUD_SETTING);
+top:
 	while (1) {
 		uart_putstr(startupString);
 		
@@ -153,6 +154,11 @@ int main(void)
 				crc = uart_waitchar() << 8;
 				crc |= uart_waitchar();
 				if (calcrc(&data[bufferPoint - 128], 128) == crc) {
+					if (address >= 0x1c00) {
+						/* don't allow overwriting the bootloader */
+						uart_putstr(cancelStr);
+						goto top;
+					}
 					while (bufferPoint >= SPM_PAGESIZE) {
 						boot_page_erase(address);
 						while (boot_rww_busy()) {
