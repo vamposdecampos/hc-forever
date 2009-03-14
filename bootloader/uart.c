@@ -1,3 +1,5 @@
+#define F_CPU	14000000
+
 #include <inttypes.h>
 #include <stdio.h>
 #include <avr/io.h>
@@ -5,14 +7,13 @@
 #include <avr/boot.h>
 #include <setjmp.h>
 
-#define BAUD 48			//00
-#define CRYSTAL 1		//MHz
-#define BAUD_SETTING ((CRYSTAL*10000)/(16*BAUD)-1)
+#define BAUD 57600
+#define BAUD_SETTING (F_CPU/(16L * BAUD)-1)
 
 #if SPM_PAGESIZE > 128
 #define DATA_BUFFER_SIZE SPM_PAGESIZE
 #else
-#define DATA_BUFFER_SIZE SPM_PAGESIZE
+#define DATA_BUFFER_SIZE 128
 #endif
 
 #define XMODEM_NUL 0x00
