@@ -31,13 +31,13 @@
 
 
 # MCU name
-MCU = atmega8
+MCU = atmega8515
 
 # Output format. (can be srec, ihex, binary)
 FORMAT = ihex
 
 # Target file name (without extension).
-TARGET = UART
+TARGET = uart
 
 # Optimization level, can be [0, 1, 2, 3, s]. 0 turns off optimization.
 # (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
@@ -81,7 +81,7 @@ EXTRAINCDIRS =
 #    -ahlms:  create assembler listing
 CFLAGS = -g -O$(OPT) \
 -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums \
--Wall -Wstrict-prototypes \
+-Wall -Werror -Wstrict-prototypes \
 -Wa,-adhlns=$(<:.c=.lst) \
 $(patsubst %,-I%,$(EXTRAINCDIRS))\
 -Wl,--section-start=.text=0x01C00

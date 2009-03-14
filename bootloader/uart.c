@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <avr/signal.h>
 #include <avr/boot.h>
 #include <setjmp.h>
 
@@ -78,7 +77,7 @@ int uart_waitchar(void)
 	return c;
 }
 
-int calcrc(char *ptr, int count)
+unsigned int calcrc(unsigned char *ptr, int count)
 {
 	int crc;
 	char i;
