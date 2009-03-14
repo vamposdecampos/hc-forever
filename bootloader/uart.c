@@ -25,7 +25,7 @@
 #define XMODEM_CAN 0x18
 #define XMODEM_EOF 0x1A
 
-#define XMODEM_RECIEVING_WAIT_CHAR 	'C'
+#define XMODEM_RECEIVING_WAIT_CHAR 	'C'
 
 void (*app) (void) = 0;
 void initIo(uint16_t baud)
@@ -50,6 +50,12 @@ int uart_putchar(char c)
 	loop_until_bit_is_set(UCSRA, UDRE);
 	UDR = c;
 	return 0;
+}
+
+static void uart_putstr(const char *s)
+{
+	while (*s)
+		uart_putchar(*s++);
 }
 
 int uart_getchar(void)
@@ -78,7 +84,7 @@ int uart_waitchar(void)
 	return c;
 }
 
-unsigned int calcrc(unsigned char *ptr, int count)
+uint16_t calcrc(unsigned char *ptr, int count)
 {
 	int crc;
 	char i;
@@ -95,32 +101,39 @@ unsigned int calcrc(unsigned char *ptr, int count)
 	}
 	return (crc);
 }
+
 const char startupString[] = "\r\n"
 	"HC2k bootloader " __DATE__ " " __TIME__ "\r\n"
-	"press 'd' to download, other key to run.\r\n\0";
+	"press 'd' to download, 'r' to run.\r\n";
+
+const char runString[] = "\r\n"
+	"Running target.\r\n";
 
 int main(void)
 {
 	int i, j;
-	unsigned char timercount = 0;
+	unsigned short timercount = 0;
 	unsigned char packNO;
 	unsigned long address;
 	unsigned long bufferPoint;
 	unsigned char data[DATA_BUFFER_SIZE];
-	unsigned int crc;
+	uint16_t crc;
+
 	initIo(BAUD_SETTING);
-	//fdevopen(uart_putchar,uart_getchar,0);
-	i = 0;
-	while (startupString[i] != '\0') {
-		uart_putchar(startupString[i]);
-		i++;
+	while (1) {
+		uart_putstr(startupString);
+		
+		int ch = uart_waitchar();
+		if (ch == 'r')
+			goto run;
+		if (ch == 'd')
+			break;
 	}
-	if (uart_waitchar() != 'd')
-		app();
+
 	while (uart_getchar() != XMODEM_SOH) {
 		if (TIFR & (1 << TOV0)) {
-			if (timercount == 200) {
-				uart_putchar(XMODEM_RECIEVING_WAIT_CHAR);
+			if (timercount == 5000) {
+				uart_putchar(XMODEM_RECEIVING_WAIT_CHAR);
 				timercount = 0;
 			}
 			timercount++;
@@ -131,18 +144,16 @@ int main(void)
 	address = 0;
 	bufferPoint = 0;
 	do {
-		if (packNO == (char) uart_waitchar()) {
+		if (packNO == (unsigned char) uart_waitchar()) {
 			if (packNO == (unsigned char) (~uart_waitchar())) {
 				for (i = 0; i < 128; i++) {
 					data[bufferPoint] = (unsigned char) uart_waitchar();
 					bufferPoint++;
 				}
-				crc = 0;
-				crc += (uart_waitchar() << 8);
-				crc += uart_waitchar();
+				crc = uart_waitchar() << 8;
+				crc |= uart_waitchar();
 				if (calcrc(&data[bufferPoint - 128], 128) == crc) {
 					while (bufferPoint >= SPM_PAGESIZE) {
-
 						boot_page_erase(address);
 						while (boot_rww_busy()) {
 							boot_rww_enable();
@@ -172,5 +183,8 @@ int main(void)
 		}
 	} while (uart_waitchar() != XMODEM_EOT);
 	uart_putchar(XMODEM_ACK);
+
+run:
+	uart_putstr(runString);
 	(app) ();
 }
