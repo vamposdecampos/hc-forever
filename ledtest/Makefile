@@ -23,7 +23,7 @@ main.bin:	$(OBJECTS)
 main.hex:	main.bin
 	rm -f main.hex main.eep.hex
 	avr-objcopy -j .text -j .data -O ihex main.bin main.hex
-	./checksize main.bin
+	../checksize main.bin
 
 main.raw.bin:	main.bin
 	avr-objcopy -j .text -j .data -O binary main.bin main.raw.bin
