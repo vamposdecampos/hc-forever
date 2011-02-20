@@ -5,6 +5,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/boot.h>
+#include <avr/delay.h>
 #include <setjmp.h>
 
 #define BAUD 57600
@@ -121,16 +122,19 @@ int main(void)
 
 	initIo(BAUD_SETTING);
 top:
-	while (1) {
-		uart_putstr(startupString);
-		
-		int ch = uart_waitchar();
+	uart_putstr(startupString);
+	for (i = 0; i < 30; i++) {
+		int ch = uart_getchar();
 		if (ch == 'r')
-			goto run;
-		if (ch == 'd')
 			break;
+		if (ch == 'd')
+			goto download;
+		_delay_ms(100);
+		uart_putchar('.');
 	}
+	goto run;
 
+download:
 	while (uart_getchar() != XMODEM_SOH) {
 		if (TIFR & (1 << TOV0)) {
 			if (timercount == 5000) {
